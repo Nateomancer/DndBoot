@@ -1,0 +1,3 @@
+rootProject.name = 'DndBoot'
+
+includeFlat 'JPADnd'
