@@ -53,6 +53,8 @@ public class User {
 
 	private String status;
 
+	//Character one to many
+	
 	// constructor
 	public User() {
 		super();

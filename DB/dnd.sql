@@ -22,11 +22,14 @@ DROP TABLE IF EXISTS `dnd_race` ;
 
 CREATE TABLE IF NOT EXISTS `dnd_race` (
   `id` INT NOT NULL AUTO_INCREMENT,
-  `name` VARCHAR(45) NULL,
-  `size` VARCHAR(45) NULL,
-  `speed` VARCHAR(45) NULL,
-  `short_description` VARCHAR(45) NULL,
-  `long_description` VARCHAR(45) NULL,
+  `name` VARCHAR(50) NULL,
+  `size` VARCHAR(50) NULL,
+  `speed` INT NULL,
+  `short_description` VARCHAR(500) NULL,
+  `long_description` TEXT(2000) NULL,
+  `lifespan` VARCHAR(50) NULL,
+  `ability_score_modifier` INT NULL,
+  `ability_increased` VARCHAR(50) NULL,
   PRIMARY KEY (`id`))
 ENGINE = InnoDB;
 
@@ -39,7 +42,7 @@ DROP TABLE IF EXISTS `job_class` ;
 CREATE TABLE IF NOT EXISTS `job_class` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `job_class_name` VARCHAR(45) NULL,
-  `hit_dice` VARCHAR(45) NULL,
+  `description` VARCHAR(45) NULL,
   PRIMARY KEY (`id`))
 ENGINE = InnoDB;
 
@@ -57,18 +60,6 @@ ENGINE = InnoDB;
 
 
 -- -----------------------------------------------------
--- Table `personality_trait`
--- -----------------------------------------------------
-DROP TABLE IF EXISTS `personality_trait` ;
-
-CREATE TABLE IF NOT EXISTS `personality_trait` (
-  `id` INT NOT NULL AUTO_INCREMENT,
-  `trait` VARCHAR(45) NULL,
-  PRIMARY KEY (`id`))
-ENGINE = InnoDB;
-
-
--- -----------------------------------------------------
 -- Table `background`
 -- -----------------------------------------------------
 DROP TABLE IF EXISTS `background` ;
@@ -76,19 +67,6 @@ DROP TABLE IF EXISTS `background` ;
 CREATE TABLE IF NOT EXISTS `background` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `name` VARCHAR(45) NULL,
-  `description` VARCHAR(45) NULL,
-  PRIMARY KEY (`id`))
-ENGINE = InnoDB;
-
-
--- -----------------------------------------------------
--- Table `equipment`
--- -----------------------------------------------------
-DROP TABLE IF EXISTS `equipment` ;
-
-CREATE TABLE IF NOT EXISTS `equipment` (
-  `id` INT NOT NULL AUTO_INCREMENT,
-  `equipment_name` VARCHAR(45) NULL,
   `description` VARCHAR(45) NULL,
   PRIMARY KEY (`id`))
 ENGINE = InnoDB;
@@ -119,6 +97,41 @@ ENGINE = InnoDB;
 
 
 -- -----------------------------------------------------
+-- Table `equipment`
+-- -----------------------------------------------------
+DROP TABLE IF EXISTS `equipment` ;
+
+CREATE TABLE IF NOT EXISTS `equipment` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `equipment_name` VARCHAR(45) NULL,
+  `description` VARCHAR(45) NULL,
+  PRIMARY KEY (`id`))
+ENGINE = InnoDB;
+
+
+-- -----------------------------------------------------
+-- Table `sub_race`
+-- -----------------------------------------------------
+DROP TABLE IF EXISTS `sub_race` ;
+
+CREATE TABLE IF NOT EXISTS `sub_race` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `dnd_race_id` INT NULL,
+  `ability_modified` VARCHAR(45) NULL,
+  `ability_modifier` INT NULL,
+  `name` VARCHAR(45) NULL,
+  `description` VARCHAR(45) NULL,
+  PRIMARY KEY (`id`),
+  INDEX `fk_sub_race_dnd_race1_idx` (`dnd_race_id` ASC),
+  CONSTRAINT `fk_sub_race_dnd_race1`
+    FOREIGN KEY (`dnd_race_id`)
+    REFERENCES `dnd_race` (`id`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
+ENGINE = InnoDB;
+
+
+-- -----------------------------------------------------
 -- Table `dnd_character`
 -- -----------------------------------------------------
 DROP TABLE IF EXISTS `dnd_character` ;
@@ -143,18 +156,18 @@ CREATE TABLE IF NOT EXISTS `dnd_character` (
   `dnd_race_id` INT NULL,
   `job_class_id` INT NULL,
   `alignment_id` INT NULL,
-  `personality_trait_id` INT NULL,
   `background_id` INT NULL,
-  `equipment_id` INT NULL,
   `user_id` INT NULL,
+  `equipment_id` INT NULL,
+  `sub_race_id` INT NULL,
   PRIMARY KEY (`id`),
   INDEX `fk_dnd_character_dnd_race_idx` (`dnd_race_id` ASC),
   INDEX `fk_dnd_character_job_class1_idx` (`job_class_id` ASC),
   INDEX `fk_dnd_character_alignment1_idx` (`alignment_id` ASC),
-  INDEX `fk_dnd_character_personality_trait1_idx` (`personality_trait_id` ASC),
   INDEX `fk_dnd_character_background1_idx` (`background_id` ASC),
-  INDEX `fk_dnd_character_equipment1_idx` (`equipment_id` ASC),
   INDEX `fk_dnd_character_user1_idx` (`user_id` ASC),
+  INDEX `fk_dnd_character_equipment1_idx` (`equipment_id` ASC),
+  INDEX `fk_dnd_character_sub_race1_idx` (`sub_race_id` ASC),
   CONSTRAINT `fk_dnd_character_dnd_race`
     FOREIGN KEY (`dnd_race_id`)
     REFERENCES `dnd_race` (`id`)
@@ -170,14 +183,14 @@ CREATE TABLE IF NOT EXISTS `dnd_character` (
     REFERENCES `alignment` (`id`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
-  CONSTRAINT `fk_dnd_character_personality_trait1`
-    FOREIGN KEY (`personality_trait_id`)
-    REFERENCES `personality_trait` (`id`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION,
   CONSTRAINT `fk_dnd_character_background1`
     FOREIGN KEY (`background_id`)
     REFERENCES `background` (`id`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT `fk_dnd_character_user1`
+    FOREIGN KEY (`user_id`)
+    REFERENCES `user` (`id`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
   CONSTRAINT `fk_dnd_character_equipment1`
@@ -185,9 +198,9 @@ CREATE TABLE IF NOT EXISTS `dnd_character` (
     REFERENCES `equipment` (`id`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
-  CONSTRAINT `fk_dnd_character_user1`
-    FOREIGN KEY (`user_id`)
-    REFERENCES `user` (`id`)
+  CONSTRAINT `fk_dnd_character_sub_race1`
+    FOREIGN KEY (`sub_race_id`)
+    REFERENCES `sub_race` (`id`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB;
@@ -208,7 +221,21 @@ CREATE TABLE IF NOT EXISTS `spell` (
   `spell_range` VARCHAR(45) NULL,
   `spell_duration` VARCHAR(45) NULL,
   `description` VARCHAR(45) NULL,
-  PRIMARY KEY (`id`))
+  `job_class_id` INT NULL,
+  `dnd_race_id` INT NULL,
+  PRIMARY KEY (`id`),
+  INDEX `fk_spell_job_class1_idx` (`job_class_id` ASC),
+  INDEX `fk_spell_dnd_race1_idx` (`dnd_race_id` ASC),
+  CONSTRAINT `fk_spell_job_class1`
+    FOREIGN KEY (`job_class_id`)
+    REFERENCES `job_class` (`id`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT `fk_spell_dnd_race1`
+    FOREIGN KEY (`dnd_race_id`)
+    REFERENCES `dnd_race` (`id`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
 ENGINE = InnoDB;
 
 
@@ -264,13 +291,25 @@ ENGINE = InnoDB;
 
 
 -- -----------------------------------------------------
--- Table `saving_throw`
+-- Table `saving_throw_proficiency`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `saving_throw` ;
+DROP TABLE IF EXISTS `saving_throw_proficiency` ;
 
-CREATE TABLE IF NOT EXISTS `saving_throw` (
+CREATE TABLE IF NOT EXISTS `saving_throw_proficiency` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `saving_throw_name` VARCHAR(45) NULL,
+  PRIMARY KEY (`id`))
+ENGINE = InnoDB;
+
+
+-- -----------------------------------------------------
+-- Table `personality_trait`
+-- -----------------------------------------------------
+DROP TABLE IF EXISTS `personality_trait` ;
+
+CREATE TABLE IF NOT EXISTS `personality_trait` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `trait` VARCHAR(45) NULL,
   PRIMARY KEY (`id`))
 ENGINE = InnoDB;
 
@@ -389,7 +428,7 @@ CREATE TABLE IF NOT EXISTS `job_class_has_saving_throw` (
     ON UPDATE NO ACTION,
   CONSTRAINT `fk_job_class_has_saving_throw_saving_throw1`
     FOREIGN KEY (`saving_throw_id`)
-    REFERENCES `saving_throw` (`id`)
+    REFERENCES `saving_throw_proficiency` (`id`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB;
@@ -428,7 +467,14 @@ CREATE TABLE IF NOT EXISTS `feature` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `name` VARCHAR(45) NULL,
   `description` VARCHAR(45) NULL,
-  PRIMARY KEY (`id`))
+  `sub_race_id` INT NULL,
+  PRIMARY KEY (`id`),
+  INDEX `fk_feature_sub_race1_idx` (`sub_race_id` ASC),
+  CONSTRAINT `fk_feature_sub_race1`
+    FOREIGN KEY (`sub_race_id`)
+    REFERENCES `sub_race` (`id`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
 ENGINE = InnoDB;
 
 
@@ -529,25 +575,121 @@ ENGINE = InnoDB;
 
 
 -- -----------------------------------------------------
--- Table `timestamps`
+-- Table `dnd_character_has_personality_trait`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `timestamps` ;
+DROP TABLE IF EXISTS `dnd_character_has_personality_trait` ;
 
-CREATE TABLE IF NOT EXISTS `timestamps` (
-  `create_time` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
-  `update_time` TIMESTAMP NULL);
+CREATE TABLE IF NOT EXISTS `dnd_character_has_personality_trait` (
+  `dnd_character_id` INT NOT NULL,
+  `personality_trait_id` INT NOT NULL,
+  PRIMARY KEY (`dnd_character_id`, `personality_trait_id`),
+  INDEX `fk_dnd_character_has_personality_trait_personality_trait1_idx` (`personality_trait_id` ASC),
+  INDEX `fk_dnd_character_has_personality_trait_dnd_character1_idx` (`dnd_character_id` ASC),
+  CONSTRAINT `fk_dnd_character_has_personality_trait_dnd_character1`
+    FOREIGN KEY (`dnd_character_id`)
+    REFERENCES `dnd_character` (`id`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT `fk_dnd_character_has_personality_trait_personality_trait1`
+    FOREIGN KEY (`personality_trait_id`)
+    REFERENCES `personality_trait` (`id`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
+ENGINE = InnoDB;
 
 
 -- -----------------------------------------------------
--- Table `user_1`
+-- Table `dnd_character_has_equipment`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `user_1` ;
+DROP TABLE IF EXISTS `dnd_character_has_equipment` ;
 
-CREATE TABLE IF NOT EXISTS `user_1` (
-  `username` VARCHAR(16) NOT NULL,
-  `email` VARCHAR(255) NULL,
-  `password` VARCHAR(32) NOT NULL,
-  `create_time` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP);
+CREATE TABLE IF NOT EXISTS `dnd_character_has_equipment` (
+  `dnd_character_id` INT NOT NULL,
+  `equipment_id` INT NOT NULL,
+  PRIMARY KEY (`dnd_character_id`, `equipment_id`),
+  INDEX `fk_dnd_character_has_equipment_equipment1_idx` (`equipment_id` ASC),
+  INDEX `fk_dnd_character_has_equipment_dnd_character1_idx` (`dnd_character_id` ASC),
+  CONSTRAINT `fk_dnd_character_has_equipment_dnd_character1`
+    FOREIGN KEY (`dnd_character_id`)
+    REFERENCES `dnd_character` (`id`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT `fk_dnd_character_has_equipment_equipment1`
+    FOREIGN KEY (`equipment_id`)
+    REFERENCES `equipment` (`id`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
+ENGINE = InnoDB;
+
+
+-- -----------------------------------------------------
+-- Table `sub_class`
+-- -----------------------------------------------------
+DROP TABLE IF EXISTS `sub_class` ;
+
+CREATE TABLE IF NOT EXISTS `sub_class` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `name` VARCHAR(200) NULL,
+  `description` VARCHAR(200) NULL,
+  `job_class_id` INT NULL,
+  PRIMARY KEY (`id`),
+  INDEX `fk_subclass_job_class1_idx` (`job_class_id` ASC),
+  CONSTRAINT `fk_subclass_job_class1`
+    FOREIGN KEY (`job_class_id`)
+    REFERENCES `job_class` (`id`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
+ENGINE = InnoDB;
+
+
+-- -----------------------------------------------------
+-- Table `job_class_has_job_class`
+-- -----------------------------------------------------
+DROP TABLE IF EXISTS `job_class_has_job_class` ;
+
+CREATE TABLE IF NOT EXISTS `job_class_has_job_class` (
+  `job_class_id` INT NOT NULL,
+  `job_class_id1` INT NOT NULL,
+  PRIMARY KEY (`job_class_id`, `job_class_id1`),
+  INDEX `fk_job_class_has_job_class_job_class2_idx` (`job_class_id1` ASC),
+  INDEX `fk_job_class_has_job_class_job_class1_idx` (`job_class_id` ASC),
+  CONSTRAINT `fk_job_class_has_job_class_job_class1`
+    FOREIGN KEY (`job_class_id`)
+    REFERENCES `job_class` (`id`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT `fk_job_class_has_job_class_job_class2`
+    FOREIGN KEY (`job_class_id1`)
+    REFERENCES `job_class` (`id`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
+ENGINE = InnoDB;
+
+
+-- -----------------------------------------------------
+-- Table `game_dice`
+-- -----------------------------------------------------
+DROP TABLE IF EXISTS `game_dice` ;
+
+CREATE TABLE IF NOT EXISTS `game_dice` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `dice_type` VARCHAR(45) NULL,
+  `dice_total` VARCHAR(45) NULL,
+  PRIMARY KEY (`id`))
+ENGINE = InnoDB;
+
+
+-- -----------------------------------------------------
+-- Table `ability_modifier`
+-- -----------------------------------------------------
+DROP TABLE IF EXISTS `ability_modifier` ;
+
+CREATE TABLE IF NOT EXISTS `ability_modifier` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `name` VARCHAR(45) NULL,
+  `modifier` INT NULL,
+  PRIMARY KEY (`id`))
+ENGINE = InnoDB;
 
 SET SQL_MODE = '';
 DROP USER IF EXISTS dungeonadmin@localhost;
@@ -571,8 +713,8 @@ SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;
 -- -----------------------------------------------------
 START TRANSACTION;
 USE `dndwebdb`;
-INSERT INTO `dnd_race` (`id`, `name`, `size`, `speed`, `short_description`, `long_description`) VALUES (1, 'Human', 'Medium', 'Fast', 'Human Stuff', 'Long Human Stuff');
-INSERT INTO `dnd_race` (`id`, `name`, `size`, `speed`, `short_description`, `long_description`) VALUES (2, 'Orc', 'Big', 'Slow', 'Orc Stuff', 'Long Orc Stuff');
+INSERT INTO `dnd_race` (`id`, `name`, `size`, `speed`, `short_description`, `long_description`, `lifespan`, `ability_score_modifier`, `ability_increased`) VALUES (1, 'Human', 'Medium', 20, 'Human Stuff', 'Long Human Stuff', NULL, NULL, NULL);
+INSERT INTO `dnd_race` (`id`, `name`, `size`, `speed`, `short_description`, `long_description`, `lifespan`, `ability_score_modifier`, `ability_increased`) VALUES (2, 'Orc', 'Big', 30, 'Orc Stuff', 'Long Orc Stuff', NULL, NULL, NULL);
 
 COMMIT;
 
@@ -582,8 +724,8 @@ COMMIT;
 -- -----------------------------------------------------
 START TRANSACTION;
 USE `dndwebdb`;
-INSERT INTO `job_class` (`id`, `job_class_name`, `hit_dice`) VALUES (1, 'Barbarian', '3');
-INSERT INTO `job_class` (`id`, `job_class_name`, `hit_dice`) VALUES (2, 'Warlock', '5');
+INSERT INTO `job_class` (`id`, `job_class_name`, `description`) VALUES (1, 'Barbarian', NULL);
+INSERT INTO `job_class` (`id`, `job_class_name`, `description`) VALUES (2, 'Warlock', NULL);
 
 COMMIT;
 
@@ -600,34 +742,12 @@ COMMIT;
 
 
 -- -----------------------------------------------------
--- Data for table `personality_trait`
--- -----------------------------------------------------
-START TRANSACTION;
-USE `dndwebdb`;
-INSERT INTO `personality_trait` (`id`, `trait`) VALUES (1, 'Nice');
-INSERT INTO `personality_trait` (`id`, `trait`) VALUES (2, 'Mean');
-
-COMMIT;
-
-
--- -----------------------------------------------------
 -- Data for table `background`
 -- -----------------------------------------------------
 START TRANSACTION;
 USE `dndwebdb`;
 INSERT INTO `background` (`id`, `name`, `description`) VALUES (1, 'Adventuer', 'Went on adventures');
 INSERT INTO `background` (`id`, `name`, `description`) VALUES (2, 'Cultist', 'Summoned Demons');
-
-COMMIT;
-
-
--- -----------------------------------------------------
--- Data for table `equipment`
--- -----------------------------------------------------
-START TRANSACTION;
-USE `dndwebdb`;
-INSERT INTO `equipment` (`id`, `equipment_name`, `description`) VALUES (1, 'Big Ax', 'A Very Big Ax');
-INSERT INTO `equipment` (`id`, `equipment_name`, `description`) VALUES (2, 'Staff', 'A Magic Staff');
 
 COMMIT;
 
@@ -644,12 +764,23 @@ COMMIT;
 
 
 -- -----------------------------------------------------
+-- Data for table `equipment`
+-- -----------------------------------------------------
+START TRANSACTION;
+USE `dndwebdb`;
+INSERT INTO `equipment` (`id`, `equipment_name`, `description`) VALUES (1, 'Big Ax', 'A Very Big Ax');
+INSERT INTO `equipment` (`id`, `equipment_name`, `description`) VALUES (2, 'Staff', 'A Magic Staff');
+
+COMMIT;
+
+
+-- -----------------------------------------------------
 -- Data for table `dnd_character`
 -- -----------------------------------------------------
 START TRANSACTION;
 USE `dndwebdb`;
-INSERT INTO `dnd_character` (`id`, `name`, `strength`, `dexterity`, `constitution`, `intelligence`, `wisdom`, `charisma`, `gender`, `char_level`, `date_created`, `date_updated`, `status`, `initiative`, `armor_class`, `character_image`, `dnd_race_id`, `job_class_id`, `alignment_id`, `personality_trait_id`, `background_id`, `equipment_id`, `user_id`) VALUES (1, 'Nateomancer', 14, 8, 10, 14, 10, 15, 'Male', '3', NULL, NULL, 'Alive', 10, 20, NULL, 1, 1, 1, 1, 1, 1, 1);
-INSERT INTO `dnd_character` (`id`, `name`, `strength`, `dexterity`, `constitution`, `intelligence`, `wisdom`, `charisma`, `gender`, `char_level`, `date_created`, `date_updated`, `status`, `initiative`, `armor_class`, `character_image`, `dnd_race_id`, `job_class_id`, `alignment_id`, `personality_trait_id`, `background_id`, `equipment_id`, `user_id`) VALUES (2, 'Dragonaut ', 15, 14, 14, 8, 10, 10, 'Male', '2', NULL, NULL, 'Alive', 11, 22, NULL, 2, 2, 2, 2, 2, 2, 1);
+INSERT INTO `dnd_character` (`id`, `name`, `strength`, `dexterity`, `constitution`, `intelligence`, `wisdom`, `charisma`, `gender`, `char_level`, `date_created`, `date_updated`, `status`, `initiative`, `armor_class`, `character_image`, `dnd_race_id`, `job_class_id`, `alignment_id`, `background_id`, `user_id`, `equipment_id`, `sub_race_id`) VALUES (1, 'Nateomancer', 14, 8, 10, 14, 10, 15, 'Male', '3', NULL, NULL, 'Alive', 10, 20, NULL, 1, 1, 1, 1, 1, NULL, NULL);
+INSERT INTO `dnd_character` (`id`, `name`, `strength`, `dexterity`, `constitution`, `intelligence`, `wisdom`, `charisma`, `gender`, `char_level`, `date_created`, `date_updated`, `status`, `initiative`, `armor_class`, `character_image`, `dnd_race_id`, `job_class_id`, `alignment_id`, `background_id`, `user_id`, `equipment_id`, `sub_race_id`) VALUES (2, 'Dragonaut ', 15, 14, 14, 8, 10, 10, 'Male', '2', NULL, NULL, 'Alive', 11, 22, NULL, 2, 2, 2, 2, 1, NULL, NULL);
 
 COMMIT;
 
@@ -659,8 +790,8 @@ COMMIT;
 -- -----------------------------------------------------
 START TRANSACTION;
 USE `dndwebdb`;
-INSERT INTO `spell` (`id`, `spell_name`, `spell_level`, `spell_school`, `casting_time`, `components`, `spell_range`, `spell_duration`, `description`) VALUES (1, 'Fireball', '1', 'Fire School', '1 minutes', 'None', '20 Feet', '2 Minutes', 'Cast a Huge Fire Ball');
-INSERT INTO `spell` (`id`, `spell_name`, `spell_level`, `spell_school`, `casting_time`, `components`, `spell_range`, `spell_duration`, `description`) VALUES (2, 'Iceball', '1', 'Ice School', '2 minutes', 'Some', '30 feet', NULL, NULL);
+INSERT INTO `spell` (`id`, `spell_name`, `spell_level`, `spell_school`, `casting_time`, `components`, `spell_range`, `spell_duration`, `description`, `job_class_id`, `dnd_race_id`) VALUES (1, 'Fireball', '1', 'Fire School', '1 minutes', 'None', '20 Feet', '2 Minutes', 'Cast a Huge Fire Ball', NULL, NULL);
+INSERT INTO `spell` (`id`, `spell_name`, `spell_level`, `spell_school`, `casting_time`, `components`, `spell_range`, `spell_duration`, `description`, `job_class_id`, `dnd_race_id`) VALUES (2, 'Iceball', '1', 'Ice School', '2 minutes', 'Some', '30 feet', NULL, NULL, NULL, NULL);
 
 COMMIT;
 
@@ -688,11 +819,22 @@ COMMIT;
 
 
 -- -----------------------------------------------------
--- Data for table `saving_throw`
+-- Data for table `saving_throw_proficiency`
 -- -----------------------------------------------------
 START TRANSACTION;
 USE `dndwebdb`;
-INSERT INTO `saving_throw` (`id`, `saving_throw_name`) VALUES (1, 'Saving Throw Place Holder');
+INSERT INTO `saving_throw_proficiency` (`id`, `saving_throw_name`) VALUES (1, 'Saving Throw Place Holder');
+
+COMMIT;
+
+
+-- -----------------------------------------------------
+-- Data for table `personality_trait`
+-- -----------------------------------------------------
+START TRANSACTION;
+USE `dndwebdb`;
+INSERT INTO `personality_trait` (`id`, `trait`) VALUES (1, 'Nice');
+INSERT INTO `personality_trait` (`id`, `trait`) VALUES (2, 'Mean');
 
 COMMIT;
 
@@ -744,8 +886,8 @@ COMMIT;
 -- -----------------------------------------------------
 START TRANSACTION;
 USE `dndwebdb`;
-INSERT INTO `feature` (`id`, `name`, `description`) VALUES (1, 'Big Ax', 'Swing BIg Ax');
-INSERT INTO `feature` (`id`, `name`, `description`) VALUES (2, 'Big Demon', 'Swing Big Demon');
+INSERT INTO `feature` (`id`, `name`, `description`, `sub_race_id`) VALUES (1, 'Big Ax', 'Swing BIg Ax', NULL);
+INSERT INTO `feature` (`id`, `name`, `description`, `sub_race_id`) VALUES (2, 'Big Demon', 'Swing Big Demon', NULL);
 
 COMMIT;
 

@@ -9,6 +9,12 @@
 		<!-- begin entites -->
 		
 		<class>com.skilldistillery.dnd.entities.User</class>
+		<class>com.skilldistillery.dnd.entities.PlayerCharacter</class>
+		<class>com.skilldistillery.dnd.entities.CharacterRace</class>
+		<class>com.skilldistillery.dnd.entities.CharacterSubRace</class>
+		<class>com.skilldistillery.dnd.entities.CharacterClass</class>
+		<class>com.skilldistillery.dnd.entities.CharacterSubClass</class>
+	
 		<!-- end entites -->
 
 
